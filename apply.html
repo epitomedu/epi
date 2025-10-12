@@ -1,12 +1,25 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>신청 폼</title>
-<script src="open.js" defer></script>
+
+<!-- 🔒 접수 시간 제한 스크립트 -->
+<script>
+  const OPEN_AT_KST = "2025-10-12 17:00:00"; // 접수 시작 시간 (KST)
+  const now = new Date(new Date().getTime() + (9 * 60 * 60 * 1000)); // 현재시간 KST
+  const openTime = new Date(OPEN_AT_KST.replace(" ", "T"));
+  if (now < openTime) {
+    alert("아직 접수 기간이 아닙니다.");
+    window.location.href = "/";
+  }
+</script>
+
 <style>
-  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:#f9fafb; color:#111; }
+  :root { color-scheme: light dark; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
   .wrap { max-width:760px; margin:40px auto; padding:0 20px; }
   h2 { font-size:28px; margin:22px 0 16px; }
   .block { margin:18px 0; }
@@ -18,7 +31,20 @@
   input[type=checkbox]{ width:18px; height:18px; vertical-align:middle; }
   .check-row{ margin:8px 0; font-weight:600; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  button { padding:10px 14px; border-radius:8px; border:1px solid #cfd4dc; background:#111827; color:#fff; cursor:pointer; }
+  button { padding:10px 14px; border-radius:8px; border:1px solid #cfd4dc;
+           background:#111827; color:#fff; cursor:pointer; }
+
+  /* 주소 iframe 오버레이 스타일 */
+  #addrWrap {
+    display:none; position:fixed; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    z-index:1000; border:2px solid #333; width:480px; height:520px;
+    background:#fff; box-shadow:0 10px 40px rgba(0,0,0,0.3);
+  }
+  #addrClose {
+    position:absolute; top:-40px; right:0; background:#333; color:#fff;
+    border:none; padding:6px 12px; cursor:pointer; border-radius:4px;
+  }
 </style>
 </head>
 <body>
@@ -96,5 +122,61 @@
       <button id="btnSubmit" type="button">신청하기</button>
     </div>
   </div>
+
+  <!-- 🔹 주소검색용 오버레이 div -->
+  <div id="addrWrap">
+    <button id="addrClose" type="button">닫기 ✕</button>
+  </div>
+
+  <!-- ✅ 카카오 우편번호 스크립트 -->
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" defer></script>
+  <script>
+    const addrWrap = document.getElementById('addrWrap');
+    const addrBase = document.getElementById('addrBase');
+    const addrDetail = document.getElementById('addrDetail');
+    const addrClose = document.getElementById('addrClose');
+
+    document.getElementById('btnAddrSearch').addEventListener('click', () => {
+      addrWrap.style.display = 'block';
+      new daum.Postcode({
+        oncomplete: function(data) {
+          const base = data.roadAddress || data.jibunAddress || "";
+          addrBase.value = base;
+          addrDetail.focus();
+          addrWrap.style.display = 'none';
+        },
+        onresize: function(size) {
+          addrWrap.style.height = size.height + 'px';
+        },
+        width: '100%',
+        height: '100%'
+      }).embed(addrWrap);
+    });
+
+    addrClose.addEventListener('click', () => {
+      addrWrap.style.display = 'none';
+    });
+
+    // ✅ 제출 미리보기
+    document.getElementById('btnSubmit').addEventListener('click', () => {
+      const payload = {
+        branch: document.getElementById('branch').value,
+        childBirth: document.getElementById('childBirth').value,
+        childName: document.getElementById('childName').value,
+        gender: document.getElementById('gender').value,
+        parentName: document.getElementById('parentName').value,
+        relation: document.getElementById('relation').value,
+        parentPhone: document.getElementById('parentPhone').value.replace(/\D/g,''),
+        addrBase: addrBase.value,
+        addrDetail: addrDetail.value,
+        agreeRules: document.getElementById('agreeRules').checked,
+        agreePrivacy: document.getElementById('agreePrivacy').checked,
+        agreeNotice: document.getElementById('agreeNotice').checked,
+        confirmNotice: document.getElementById('confirmNotice').checked
+      };
+      alert('제출 미리보기:\n' + JSON.stringify(payload, null, 2));
+    });
+  </script>
 </body>
 </html>
+
