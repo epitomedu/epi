@@ -5,7 +5,7 @@
 
 (function () {
   // === 설정: KST 기준 오픈 시각 ===
-  const OPEN_AT_KST = "2025-10-12 17:00:00";
+  const OPEN_AT_KST = "2025-10-12 18:00:00";
 
   // 현재 시각(UTC 기준)
   const nowUtc = new Date();
