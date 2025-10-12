@@ -6,10 +6,10 @@
 
 <title>신청 폼</title>
 
-<!-- 🔒 접수 시간 제한 스크립트 -->
+<!-- 🔒 접수 시간 제한 -->
 <script>
-  const OPEN_AT_KST = "2025-10-12 18:26:00"; // 접수 시작 시간 (KST)
-  const now = new Date(new Date().getTime() + (9 * 60 * 60 * 1000)); // 현재시간 KST
+  const OPEN_AT_KST = "2025-10-12 18:36:00";
+  const now = new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
   const openTime = new Date(OPEN_AT_KST.replace(" ", "T"));
   if (now < openTime) {
     alert("아직 접수 기간이 아닙니다.");
@@ -18,35 +18,27 @@
 </script>
 
 <style>
-  :root { color-scheme: light dark; }
-  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin:0; }
   .wrap { max-width:760px; margin:40px auto; padding:0 20px; }
-  h2 { font-size:28px; margin:22px 0 16px; }
+  h2 { font-size:24px; margin:22px 0 16px; }
   .block { margin:18px 0; }
   label { display:block; margin-bottom:8px; font-weight:700; }
   input[type=text], input[type=date], input[type=tel], select {
-    width: 360px; max-width: 100%; padding:10px 12px;
-    border:1px solid #cfd4dc; border-radius:6px; font-size:16px;
+    width: 360px; max-width: 100%; padding:10px 12px; border:1px solid #cfd4dc;
+    border-radius:6px; font-size:16px;
   }
   input[type=checkbox]{ width:18px; height:18px; vertical-align:middle; }
   .check-row{ margin:8px 0; font-weight:600; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  button { padding:10px 14px; border-radius:8px; border:1px solid #cfd4dc;
-           background:#111827; color:#fff; cursor:pointer; }
+  button { padding:10px 14px; border-radius:8px; border:1px solid #cfd4dc; background:#111827; color:#fff; cursor:pointer; }
 
-  /* 주소 iframe 오버레이 스타일 */
-  #addrWrap {
-    display:none; position:fixed; top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    z-index:1000; border:2px solid #333; width:480px; height:520px;
-    background:#fff; box-shadow:0 10px 40px rgba(0,0,0,0.3);
-  }
-  #addrClose {
-    position:absolute; top:-40px; right:0; background:#333; color:#fff;
-    border:none; padding:6px 12px; cursor:pointer; border-radius:4px;
-  }
+  #addrWrap { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    z-index:1000; border:2px solid #333; width:480px; height:520px; background:#fff; box-shadow:0 10px 40px rgba(0,0,0,0.3);}
+  #addrClose { position:absolute; top:-40px; right:0; background:#333; color:#fff; border:none;
+    padding:6px 12px; cursor:pointer; border-radius:4px;}
 </style>
 </head>
+
 <body>
   <div class="wrap">
     <h2>Step 1. 지점 선택</h2>
@@ -71,7 +63,7 @@
     <h2>Step 3. 아이/보호자 정보</h2>
     <div class="block">
       <label for="childBirth">아이 생년월일</label>
-      <input id="childBirth" type="date" placeholder="mm/dd/yyyy">
+      <input id="childBirth" type="date">
     </div>
     <div class="block">
       <label for="childName">아이 이름</label>
@@ -123,12 +115,8 @@
     </div>
   </div>
 
-  <!-- 🔹 주소검색용 오버레이 div -->
-  <div id="addrWrap">
-    <button id="addrClose" type="button">닫기 ✕</button>
-  </div>
+  <div id="addrWrap"><button id="addrClose" type="button">닫기 ✕</button></div>
 
-  <!-- ✅ 카카오 우편번호 스크립트 -->
   <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" defer></script>
   <script>
     const addrWrap = document.getElementById('addrWrap');
@@ -140,43 +128,32 @@
       addrWrap.style.display = 'block';
       new daum.Postcode({
         oncomplete: function(data) {
-          const base = data.roadAddress || data.jibunAddress || "";
-          addrBase.value = base;
+          addrBase.value = data.roadAddress || data.jibunAddress || "";
           addrDetail.focus();
           addrWrap.style.display = 'none';
         },
-        onresize: function(size) {
-          addrWrap.style.height = size.height + 'px';
-        },
+        onresize: function(size) { addrWrap.style.height = size.height + 'px'; },
         width: '100%',
         height: '100%'
       }).embed(addrWrap);
     });
 
-    addrClose.addEventListener('click', () => {
-      addrWrap.style.display = 'none';
-    });
+    addrClose.addEventListener('click', () => { addrWrap.style.display = 'none'; });
 
-    // ✅ 제출 미리보기
     document.getElementById('btnSubmit').addEventListener('click', () => {
       const payload = {
-        branch: document.getElementById('branch').value,
-        childBirth: document.getElementById('childBirth').value,
-        childName: document.getElementById('childName').value,
-        gender: document.getElementById('gender').value,
-        parentName: document.getElementById('parentName').value,
-        relation: document.getElementById('relation').value,
-        parentPhone: document.getElementById('parentPhone').value.replace(/\D/g,''),
+        branch: branch.value,
+        childBirth: childBirth.value,
+        childName: childName.value,
+        gender: gender.value,
+        parentName: parentName.value,
+        relation: relation.value,
+        parentPhone: parentPhone.value.replace(/\D/g,''),
         addrBase: addrBase.value,
-        addrDetail: addrDetail.value,
-        agreeRules: document.getElementById('agreeRules').checked,
-        agreePrivacy: document.getElementById('agreePrivacy').checked,
-        agreeNotice: document.getElementById('agreeNotice').checked,
-        confirmNotice: document.getElementById('confirmNotice').checked
+        addrDetail: addrDetail.value
       };
       alert('제출 미리보기:\n' + JSON.stringify(payload, null, 2));
     });
   </script>
 </body>
 </html>
-
