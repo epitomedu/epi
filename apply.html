@@ -3,6 +3,22 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- 🔒 접수 시간 제한 스크립트 -->
+
+<script>
+  // === 설정 ===
+  const OPEN_AT_KST = "2025-10-12 15:00:00"; // 접수 시작 시간 (KST 기준)
+  const now = new Date(new Date().getTime() + (9 * 60 * 60 * 1000)); // 현재시간을 KST로 변환
+  const openTime = new Date(OPEN_AT_KST.replace(" ", "T"));
+
+  // 접수시간 이전이면 / (메인)으로 리디렉션
+  if (now < openTime) {
+    alert("아직 접수 기간이 아닙니다.");
+    window.location.href = "/";
+  }
+</script>
+  
 <title>신청 폼</title>
 <style>
   :root { color-scheme: light dark; }
