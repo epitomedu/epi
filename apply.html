@@ -8,7 +8,7 @@
 
 <!-- 🔒 접수 시간 제한 스크립트 -->
 <script>
-  const OPEN_AT_KST = "2025-10-12 17:00:00"; // 접수 시작 시간 (KST)
+  const OPEN_AT_KST = "2025-10-12 18:26:00"; // 접수 시작 시간 (KST)
   const now = new Date(new Date().getTime() + (9 * 60 * 60 * 1000)); // 현재시간 KST
   const openTime = new Date(OPEN_AT_KST.replace(" ", "T"));
   if (now < openTime) {
