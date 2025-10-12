@@ -1,42 +1,39 @@
-/**
- * open.js — Cloudflare Pages / 정적사이트에서도 작동하는 완전한 시간제한 스크립트
- * by ChatGPT (검증됨)
- */
+<!-- open.js -->
+<script>
+// ===== 접수 시작 시각(한국시간, KST) =====
+const OPEN_AT_KST = "2025-10-12T19:00:00+09:00";  // ← 반드시 +09:00 포함!
 
-(function () {
-  // === 설정: KST 기준 오픈 시각 ===
-  const OPEN_AT_KST = "2025-10-12 18:36:00";
+// KST "현재 시각" 안전 계산 (브라우저 로컬시간 영향 제거)
+function nowInKST() {
+  // 문자열로 변환 후 Date로 재해석 → 서울 타임존 시각 확보
+  const kstString = new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" });
+  return new Date(kstString);
+}
 
-  // 현재 시각(UTC 기준)
-  const nowUtc = new Date();
+(function gateByTime() {
+  try {
+    const openAt = new Date(OPEN_AT_KST);     // KST 타임존 포함
+    const now    = nowInKST();                 // 현재 KST
 
-  // 오픈 시각을 UTC 기준으로 변환 (KST는 UTC+9)
-  const openUtc = new Date(
-    Date.UTC(
-      ...OPEN_AT_KST.split(/[- :]/).map((v, i) =>
-        i === 1 ? Number(v) - 1 : Number(v)
-      )
-    ) - 9 * 60 * 60 * 1000
-  );
+    const path = location.pathname;
 
-  // 현재 경로
-  const path = window.location.pathname;
-
-  // 디버깅용 (필요시 콘솔 확인)
-  // console.log("now(UTC):", nowUtc, "open(UTC):", openUtc, "path:", path);
-
-  // --- 로직 ---
-  // 접수 시작 이후 → /apply로 이동
-  if (nowUtc >= openUtc) {
-    if (path === "/" || path === "/index.html") {
-      window.location.replace("/apply");
+    // 1) /apply(또는 하위) 접근 차단: 접수 전이면 루트로 되돌림
+    if (/^\/apply(\/|$)/.test(path)) {
+      if (now < openAt) {
+        // 캐시/뒤로가기로 다시 들어오는 것 방지: replace 사용
+        location.replace("/");
+        return;
+      }
+    } else {
+      // 2) 그 외 경로(예: /): 접수 시간이 되면 /apply 로 자동 전환
+      if (now >= openAt) {
+        location.replace("/apply");
+        return;
+      }
     }
-  }
-  // 접수 전 → /apply 접근시 차단
-  else {
-    if (path === "/apply" || path === "/apply.html") {
-      alert("아직 접수 기간이 아닙니다.");
-      window.location.replace("/");
-    }
+  } catch (e) {
+    // 만약 파싱 실패해도 페이지는 계속 보이도록
+    console.error("[open.js] time gate error:", e);
   }
 })();
+</script>
