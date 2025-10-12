@@ -25,7 +25,7 @@
 
   <script>
     // 오픈 시각(KST)
-    const OPEN_AT_KST = "2025-10-12 23:00:00";
+    const OPEN_AT_KST = "2025-10-12 15:21:00";
     const params = new URLSearchParams(location.search);
     const forceOpen = params.get("force")==="open";
     const toIsoKst = s => (s.match(/:\d{2}$/)?s:s+":00").replace(" ","T")+"+09:00";
@@ -43,3 +43,4 @@
   </script>
 </body>
 </html>
+
