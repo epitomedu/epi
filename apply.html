@@ -8,17 +8,18 @@
 <!-- 🔒 접수 시간 제한 스크립트 (KST 기준) -->
 <script>
   // === 설정 ===
-  const OPEN_AT_KST = "2025-10-12 17:00:00"; // 접수 시작 시간 (KST)
+  const OPEN_AT_KST = "2025-10-12 17:00:00"; // KST 기준 접수 시간
 
-  // 현재 브라우저 기준 UTC → KST 변환
+  // 현재 시간을 UTC로 구함
   const nowUtc = new Date();
-  const nowKst = new Date(nowUtc.getTime() + (9 * 60 * 60 * 1000));
 
-  // OPEN_AT_KST 문자열을 UTC로 변환
-  const openTimeUtc = new Date(OPEN_AT_KST.replace(" ", "T") + "+09:00");
+  // KST는 UTC보다 9시간 빠름 → openTime을 UTC 기준으로 변환
+  const openTimeUtc = new Date(
+    new Date(OPEN_AT_KST.replace(" ", "T")).getTime() - (9 * 60 * 60 * 1000)
+  );
 
-  // 접수 시작 이전이면 리디렉션
-  if (nowKst < openTimeUtc) {
+  // 현재 시간이 openTimeUtc 이전이면 아직 접수 전
+  if (nowUtc < openTimeUtc) {
     alert("아직 접수 기간이 아닙니다.");
     window.location.href = "/";
   }
