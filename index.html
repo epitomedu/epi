@@ -1,29 +1,67 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>선착순 등록</title>
-<script src="open.js" defer></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>접수 대기중</title>
 <style>
   body {
-    font-family: system-ui, -apple-system, 'Noto Sans KR', sans-serif;
-    display: flex; justify-content: center; align-items: center;
-    height: 100vh; margin: 0; background: #eef3f9;
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
   }
-  .msg {
-    text-align: center; padding: 50px 40px; background: #fff;
-    border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-    max-width: 400px;
+  .message {
+    text-align: center;
+    color: #333;
   }
-  h1 { font-size: 22px; margin-bottom: 10px; }
-  p { color: #333; line-height: 1.5; font-size: 15px; }
+  h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+  p {
+    font-size: 16px;
+    color: #666;
+  }
 </style>
+
+<script>
+  // 🕐 설정
+  const OPEN_AT_KST = "2025-10-12 18:36:00"; // 접수 시작 시간 (KST 기준)
+  const openTime = new Date(OPEN_AT_KST.replace(" ", "T"));
+  
+  function getKSTnow() {
+    return new Date(new Date().getTime() + (9 * 60 * 60 * 1000));
+  }
+
+  function checkTime() {
+    const now = getKSTnow();
+    if (now >= openTime) {
+      window.location.href = "/apply";
+    } else {
+      const diff = Math.floor((openTime - now) / 1000);
+      const h = Math.floor(diff / 3600);
+      const m = Math.floor((diff % 3600) / 60);
+      const s = diff % 60;
+      document.getElementById("remain").textContent =
+        `${h}시간 ${m}분 ${s}초 후 접수가 시작됩니다.`;
+    }
+  }
+
+  setInterval(checkTime, 1000); // 1초마다 확인
+  window.onload = checkTime;
+</script>
 </head>
+
 <body>
-  <div class="msg">
-    <h1>지금은 접수 기간이 아닙니다.</h1>
-    <p>오픈 시간(한국 기준)이 되면 자동으로 신청 페이지로 이동합니다.</p>
+  <div class="message">
+    <h1>접수기간이 아닙니다.</h1>
+    <p id="remain"></p>
   </div>
 </body>
 </html>
+
