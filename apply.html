@@ -148,13 +148,13 @@
     });
     addrClose.addEventListener('click', () => { addrWrap.style.display = 'none'; });
 
-    // 제출(필수값 검증 + 미리보기)
+    // ================== 제출 (검증 → 서버전송) ==================
     function val(sel){ return document.querySelector(sel).value.trim(); }
     function ok(sel){  return document.querySelector(sel).checked; }
-    function sel(sel2){return document.querySelector(sel2);}
+    function sel(q){   return document.querySelector(q); }
 
-    document.getElementById('btnSubmit').addEventListener('click', () => {
-      // 간단 검증
+    document.getElementById('btnSubmit').addEventListener('click', async () => {
+      // 1) 필수값 검사
       const requiredChecks = [
         ['#branch', !!val('#branch')],
         ['#agreeRules', ok('#agreeRules')],
@@ -179,26 +179,53 @@
         return;
       }
 
+      // 2) 페이로드 구성 (백엔드 키와 일치)
       const payload = {
         branch: val('#branch'),
         agreeRules: ok('#agreeRules'),
         agreePrivacy: ok('#agreePrivacy'),
         agreeNotice: ok('#agreeNotice'),
-
         childBirth: val('#childBirth'),
         childName:  val('#childName'),
         gender:     val('#gender'),
         parentName: val('#parentName'),
         relation:   val('#relation'),
         parentPhone: val('#parentPhone').replace(/\D/g,''),
-
         addrBase:   val('#addrBase'),
         addrDetail: val('#addrDetail'),
         confirmNotice: ok('#confirmNotice')
       };
-      alert('제출 미리보기:\n' + JSON.stringify(payload, null, 2));
-      // TODO: 실제 제출 엔드포인트가 있으면 fetch(...) 사용
+
+      // 3) 중복클릭 방지
+      const btn = document.getElementById('btnSubmit');
+      const oldLabel = btn.textContent;
+      btn.disabled = true; btn.textContent = '전송 중…';
+
+      try {
+        // 4) 서버로 전송 (Cloudflare Pages Functions → /functions/api/apply.js)
+        const res = await fetch('/api/apply', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json().catch(()=>({}));
+
+        if (res.ok && data.ok) {
+          alert('신청이 접수되었습니다.\\n접수번호: ' + data.id);
+          // 필요 시 완료 페이지로 이동:
+          // location.href = '/done';
+        } else {
+          const msg = data.message || `오류가 발생했습니다. (HTTP ${res.status})`;
+          alert(msg);
+        }
+      } catch (e) {
+        alert('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+      } finally {
+        btn.disabled = false; btn.textContent = oldLabel;
+      }
     });
   </script>
 </body>
 </html>
+
