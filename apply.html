@@ -2,12 +2,11 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <!-- 캐시 방지 권장 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <!-- ✅ 시간 가드: 최상단에서 즉시 실행 -->
+  <!-- ✅ 접수 시간 가드 -->
   <script src="/open.js"></script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -28,7 +27,6 @@
     button { padding:10px 14px; border-radius:8px; border:1px solid #cfd4dc; background:#111827; color:#fff; cursor:pointer; }
     small { color:#6b7280; }
 
-    /* 주소 검색 embed 레이어 */
     #addrWrap {
       display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
       z-index:1000; border:2px solid #333; width:480px; height:520px; background:#fff; box-shadow:0 10px 40px rgba(0,0,0,0.3);
@@ -38,7 +36,6 @@
 </head>
 <body>
   <div class="wrap">
-    <!-- Step 1. 지점 -->
     <h2>Step 1. 지점 선택</h2>
     <div class="block">
       <label for="branch">지점</label>
@@ -51,7 +48,6 @@
       </select>
     </div>
 
-    <!-- Step 2. 동의(위) -->
     <h2>Step 2. 동의</h2>
     <div class="block">
       <div class="check-row"><label><input id="agreeRules" type="checkbox" required> 모집 규정을 확인했습니다.</label></div>
@@ -59,7 +55,6 @@
       <div class="check-row"><label><input id="agreeNotice" type="checkbox" required> 유의 사항을 확인했습니다.</label></div>
     </div>
 
-    <!-- Step 3. 아이/보호자 -->
     <h2>Step 3. 아이/보호자 정보</h2>
     <div class="block">
       <label for="childBirth">아이 생년월일</label>
@@ -96,7 +91,6 @@
       <input id="parentPhone" type="tel" inputmode="numeric" pattern="[0-9\-]*" placeholder="01012345678" required>
     </div>
 
-    <!-- Step 4. 주소 -->
     <h2>Step 4. 주소</h2>
     <div class="block">
       <label>주소</label>
@@ -109,24 +103,20 @@
       </div>
     </div>
 
-    <!-- Step 5. (하단) 최종 유의사항 확인 -->
     <div class="block">
       <label><input id="confirmNotice" type="checkbox" required> 유의 사항을 최종적으로 확인했습니다.</label>
     </div>
 
-    <!-- 제출 -->
     <div class="block">
       <button id="btnSubmit" type="button">신청하기</button>
     </div>
   </div>
 
-  <!-- 주소검색 embed 레이어 -->
   <div id="addrWrap"><button id="addrClose" type="button">닫기 ✕</button></div>
 
-  <!-- 카카오 우편번호(HTTPS 필수) -->
   <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" defer></script>
   <script>
-    // 주소 검색 embed
+    // 주소 embed
     const addrWrap   = document.getElementById('addrWrap');
     const addrBase   = document.getElementById('addrBase');
     const addrDetail = document.getElementById('addrDetail');
@@ -148,13 +138,12 @@
     });
     addrClose.addEventListener('click', () => { addrWrap.style.display = 'none'; });
 
-    // ================== 제출 (검증 → 서버전송) ==================
+    // 제출 (검증 → 서버 전송)
     function val(sel){ return document.querySelector(sel).value.trim(); }
     function ok(sel){  return document.querySelector(sel).checked; }
     function sel(q){   return document.querySelector(q); }
 
     document.getElementById('btnSubmit').addEventListener('click', async () => {
-      // 1) 필수값 검사
       const requiredChecks = [
         ['#branch', !!val('#branch')],
         ['#agreeRules', ok('#agreeRules')],
@@ -179,7 +168,6 @@
         return;
       }
 
-      // 2) 페이로드 구성 (백엔드 키와 일치)
       const payload = {
         branch: val('#branch'),
         agreeRules: ok('#agreeRules'),
@@ -196,30 +184,24 @@
         confirmNotice: ok('#confirmNotice')
       };
 
-      // 3) 중복클릭 방지
       const btn = document.getElementById('btnSubmit');
       const oldLabel = btn.textContent;
       btn.disabled = true; btn.textContent = '전송 중…';
 
       try {
-        // 4) 서버로 전송 (Cloudflare Pages Functions → /functions/api/apply.js)
         const res = await fetch('/api/apply', {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify(payload),
         });
-
-        const data = await res.json().catch(()=>({}));
-
+        const data = await res.json().catch(()=> ({}));
         if (res.ok && data.ok) {
-          alert('신청이 접수되었습니다.\\n접수번호: ' + data.id);
-          // 필요 시 완료 페이지로 이동:
+          alert('신청이 접수되었습니다.\n접수번호: ' + data.id);
           // location.href = '/done';
         } else {
-          const msg = data.message || `오류가 발생했습니다. (HTTP ${res.status})`;
-          alert(msg);
+          alert(data.message || `오류가 발생했습니다. (HTTP ${res.status})`);
         }
-      } catch (e) {
+      } catch(e) {
         alert('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       } finally {
         btn.disabled = false; btn.textContent = oldLabel;
@@ -228,4 +210,3 @@
   </script>
 </body>
 </html>
-
