@@ -87,7 +87,10 @@ export const onRequestPost = async ({ request, env }) => {
       const rlKey = `rl:${ip}`;
       const hit = await env.APPLIES_KV.get(rlKey);
       if (hit) return json({ ok: false, message: "잠시 후 다시 시도해주세요." }, 429);
-      await env.APPLIES_KV.put(rlKey, "1", { expirationTtl: 10 });
+      // 환경변수로 조절 가능(없으면 60초 기본)
+      const windowSec = Math.max(60, parseInt(env.RATE_LIMIT_SECONDS || '60', 10));
+      await env.APPLIES_KV.put(key, '1', { expirationTtl: windowSec });
+
     }
 
     // 4) 중복 접수 방지 (옵션: 전화번호+생일 기준)
