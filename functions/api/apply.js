@@ -45,112 +45,60 @@ export const onRequestGet = async ({ env }) => {
   });
 };
 
-export const onRequestPost = async (context) => {
+// functions/api/apply.js
+export const onRequestPost = async ({ request, env }) => {
   try {
-    const { request, env } = context;
-    const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
+    const ip  = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
+    const body = await request.json();
 
-    // 0) Body 파싱(JSON 우선, 폼 제출 fallback)
-    let body = {};
-    const ct = (request.headers.get("content-type") || "").toLowerCase();
-    if (ct.includes("application/json")) {
-      body = await request.json();
-    } else if (ct.includes("application/x-www-form-urlencoded")) {
-      const form = await request.formData();
-      for (const [k, v] of form.entries()) body[k] = v;
-    } else {
-      // 기타 타입도 일단 시도
-      try {
-        body = await request.json();
-      } catch {
-        const form = await request.formData().catch(() => null);
-        if (form) for (const [k, v] of form.entries()) body[k] = v;
-      }
-    }
-
-    // 1) 필수 항목 검증
-    const required = [
-      "branch",
-      "childBirth",
-      "childName",
-      "gender",
-      "parentName",
-      "relation",
-      "parentPhone",
-      "addrBase",
-      "addrDetail",
-    ];
+    // 1) 필수값 검증
+    const required = ['branch','childBirth','childName','gender','parentName','relation','parentPhone','addrBase','addrDetail'];
     for (const k of required) {
-      if (!body[k] || String(body[k]).trim() === "") {
-        return json({ ok: false, message: `${k} is required` }, 400);
+      if (!body[k] || String(body[k]).trim()==='') {
+        return json({ ok:false, message:`${k} is required` }, 400);
       }
     }
 
-    // 1-1) 값 정규화(전화번호 등)
-    body.parentPhone = String(body.parentPhone).replace(/\D/g, "");
-
-    // 2) 접수 시간 가드(KST)
-    const OPEN_AT_KST = env.OPEN_AT_KST || "2025-10-12 17:00:00";
-    const now = new Date();
-    const nowKST = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    const openAt = new Date(OPEN_AT_KST.replace(" ", "T"));
+    // 2) 시간 가드(KST)
+    const OPEN_AT_KST = env.OPEN_AT_KST || '2025-10-12 17:00:00';
+    const nowKST = new Date(Date.now() + 9*60*60*1000);
+    const openAt = new Date(OPEN_AT_KST.replace(' ','T'));
     if (nowKST < openAt) {
-      return json({ ok: false, message: "접수 시작 전입니다." }, 403);
+      return json({ ok:false, message:'접수 시작 전입니다.' }, 403);
     }
 
-    // 3) 레이트리밋(선택: KV)
+    // 3) 속도 제한(선택)
     if (env.APPLIES_KV) {
       const rlKey = `rl:${ip}`;
       const hit = await env.APPLIES_KV.get(rlKey);
-      if (hit) return json({ ok: false, message: "잠시 후 다시 시도해주세요." }, 429);
-      await env.APPLIES_KV.put(rlKey, "1", { expirationTtl: 10 });
+      if (hit) return json({ ok:false, message:'잠시 후 다시 시도해주세요.' }, 429);
+      await env.APPLIES_KV.put(rlKey, '1', { expirationTtl: 10 });
     }
 
-    // 4) (선택) 중복접수 방지 – 이름+생년+전화 조합으로 락
-    if (env.APPLIES_KV && env.ENABLE_DUPCHECK === "1") {
-      const dupKey = `dup:${(body.childName || "").trim()}|${(body.childBirth || "").trim()}|${body.parentPhone}`;
-      const exists = await env.APPLIES_KV.get(dupKey);
-      if (exists) {
-        return json({ ok: false, message: "이미 접수된 내역이 있습니다." }, 409);
-      }
-      // 5분 동안 중복 방지(원하면 더 길게)
-      await env.APPLIES_KV.put(dupKey, "1", { expirationTtl: 300 });
-    }
-
-    // 5) 저장 ID & 레코드
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    // 4) 저장 레코드
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
     const record = {
       id,
       ts: new Date().toISOString(),
       ip,
-      ...body,
+      ...body
     };
 
-    // 5-1) (선택) 원본 저장
-    if (env.APPLIES_KV) {
-      await env.APPLIES_KV.put(`apply:${id}`, JSON.stringify(record));
-    }
+    // 5) KV에 건별 저장 (apply:<id> => JSON)
+    if (!env.APPLIES_KV) return json({ ok:false, message:'KV not bound' }, 500);
+    await env.APPLIES_KV.put(`apply:${id}`, JSON.stringify(record));
 
-    // 6) 구글 시트(Apps Script Web App) 전송
-    if (env.SHEETS_WEBHOOK_URL) {
-      const payload = { ...record, token: env.SHEETS_SHARED_SECRET || "" };
-      const res = await fetch(env.SHEETS_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      // 시트 전송 실패해도 메인 저장은 성공 처리(원하면 주석 해제해 에러로 반환)
-      // if (!res.ok) {
-      //   const text = await res.text().catch(() => "");
-      //   return json({ ok: false, message: "Sheets push failed", detail: text }, 502);
-      // }
-    }
-
-    return json({ ok: true, id });
+    // (옵션) 제출자에게 번호 전달
+    return json({ ok:true, id });
   } catch (e) {
-    // 서버 오류
-    console.error("apply error:", e);
-    return json({ ok: false, message: e?.message || "server error" }, 500);
+    return json({ ok:false, message: e.message || 'server error' }, 500);
   }
 };
+
+function json(data, status=200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type':'application/json; charset=UTF-8' }
+  });
+}
+
