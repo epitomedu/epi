@@ -2,11 +2,12 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
+  <!-- 캐시 방지 -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
 
-  <!-- ✅ 접수 시간 가드 -->
+  <!-- ✅ 접수 시간 가드(필요 시) -->
   <script src="/open.js"></script>
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -27,17 +28,33 @@
     button { padding:10px 14px; border-radius:8px; border:1px solid #cfd4dc; background:#111827; color:#fff; cursor:pointer; }
     small { color:#6b7280; }
 
-    #addrWrap {
-      display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      z-index:1000; border:2px solid #333; width:480px; height:520px; background:#fff; box-shadow:0 10px 40px rgba(0,0,0,0.3);
+    /* 📌 주소 검색 레이어: 화면 중앙 고정 + 뷰포트 한계 내 크기 */
+    #addrWrap{
+      position: fixed;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      width: min(520px, 96vw);
+      height: min(640px, 90vh);
+      z-index: 99999;
+      display: none;            /* 열 때만 표시 */
+      background: #fff;
+      box-shadow: 0 10px 40px rgba(0,0,0,.3);
+      overflow: hidden;         /* 내부 스크롤은 iframe이 담당 */
     }
-    #addrClose { position:absolute; top:-40px; right:0; background:#333; color:#fff; border:none; padding:6px 12px; cursor:pointer; border-radius:4px; }
+    #addrWrap iframe{ width:100%; height:100%; border:0; }
+    #addrClose {
+      position:absolute; top:-40px; right:0;
+      background:#333; color:#fff; border:none; padding:6px 12px;
+      cursor:pointer; border-radius:4px;
+    }
   </style>
 </head>
 <body>
+  <!-- 예시: 최상단 추가 체크 -->
   <div class="check-row"><label><input id="agreeEpi" type="checkbox" required> epitoshi.</label></div>
 
   <div class="wrap">
+    <!-- Step 1. 지점 -->
     <h2>Step 1. 지점 선택</h2>
     <div class="block">
       <label for="branch">지점</label>
@@ -50,6 +67,7 @@
       </select>
     </div>
 
+    <!-- Step 2. 동의 -->
     <h2>Step 2. 동의</h2>
     <div class="block">
       <div class="check-row"><label><input id="agreeRules" type="checkbox" required> 모집 규정을 확인했습니다.</label></div>
@@ -57,6 +75,7 @@
       <div class="check-row"><label><input id="agreeNotice" type="checkbox" required> 유의 사항을 확인했습니다.</label></div>
     </div>
 
+    <!-- Step 3. 아이/보호자 -->
     <h2>Step 3. 아이/보호자 정보</h2>
     <div class="block">
       <label for="childBirth">아이 생년월일</label>
@@ -89,17 +108,17 @@
       </select>
     </div>
 
+    <!-- 중간에 임의 체크 추가(예시) -->
     <div class="check-row"><label><input id="agreePrivacy1" type="checkbox" required> 개인정보 수집 동의합니다1.</label></div>
 
-    
     <div class="block">
       <label for="parentPhone">보호자 휴대폰번호</label>
       <input id="parentPhone" type="tel" inputmode="numeric" pattern="[0-9\-]*" placeholder="010-1234-5678" required>
     </div>
-    
+
     <div class="check-row"><label><input id="agreePrivacy2" type="checkbox" required> 개인정보 수집 동의합니다2.</label></div>
 
-
+    <!-- Step 4. 주소 -->
     <h2>Step 4. 주소</h2>
     <div class="block">
       <label>주소</label>
@@ -112,52 +131,84 @@
       </div>
     </div>
 
+    <!-- 최종 동의 -->
     <div class="block">
       <label><input id="confirmNotice" type="checkbox" required> 유의 사항을 최종적으로 확인했습니다.</label>
     </div>
 
+    <!-- 제출 -->
     <div class="block">
       <button id="btnSubmit" type="button">신청하기</button>
     </div>
   </div>
 
+  <!-- 주소검색 레이어 -->
   <div id="addrWrap"><button id="addrClose" type="button">닫기 ✕</button></div>
 
+  <!-- 카카오 우편번호 -->
   <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js" defer></script>
   <script>
-    // 주소 embed
+    // ===== 주소 embed =====
     const addrWrap   = document.getElementById('addrWrap');
     const addrBase   = document.getElementById('addrBase');
     const addrDetail = document.getElementById('addrDetail');
-    const addrClose  = document.getElementById('addrClose');
 
+    // 열기
     document.getElementById('btnAddrSearch').addEventListener('click', () => {
+      // 기존 iframe 정리(중복 방지)
+      addrWrap.innerHTML = '<button id="addrClose" type="button">닫기 ✕</button>';
       addrWrap.style.display = 'block';
+      addrWrap.style.zIndex  = '99999';
+      addrWrap.style.width   = 'min(520px, 96vw)';
+      addrWrap.style.height  = 'min(640px, 90vh)';
+      document.body.style.overflow = 'hidden'; // 배경 스크롤 잠금
+
       new daum.Postcode({
         oncomplete: function(data) {
           const base = data.roadAddress || data.jibunAddress || "";
           addrBase.value = base;
           addrDetail.focus();
+
+          // 닫기
           addrWrap.style.display = 'none';
+          document.body.style.overflow = '';
+          addrWrap.innerHTML = '<button id="addrClose" type="button">닫기 ✕</button>';
         },
-        onresize: function(size) { addrWrap.style.height = size.height + 'px'; },
+        onresize: function(size) {
+          const h = Math.min(size.height || 640, Math.floor(window.innerHeight * 0.9));
+          addrWrap.style.height = h + 'px';
+        },
         width: '100%',
         height: '100%'
       }).embed(addrWrap);
-    });
-    addrClose.addEventListener('click', () => { addrWrap.style.display = 'none'; });
 
-    // 제출 (검증 → 서버 전송)
+      // 포커스 유도(가능한 경우)
+      setTimeout(() => {
+        try {
+          const ifr = addrWrap.querySelector('iframe');
+          if (ifr && ifr.contentWindow) ifr.contentWindow.focus();
+        } catch(_) {}
+      }, 50);
+    });
+
+    // 닫기(이벤트 위임: 버튼이 재생성되므로 document에 바인딩)
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'addrClose') {
+        addrWrap.style.display = 'none';
+        document.body.style.overflow = '';
+        addrWrap.innerHTML = '<button id="addrClose" type="button">닫기 ✕</button>';
+      }
+    });
+
+    // ===== 제출(검증 → API 전송) =====
     function val(sel){ return document.querySelector(sel).value.trim(); }
     function ok(sel){  return document.querySelector(sel).checked; }
     function sel(q){   return document.querySelector(q); }
 
     document.getElementById('btnSubmit').addEventListener('click', async () => {
+      // 필수값 검증
       const requiredChecks = [
         ['#agreeEpi', ok('#agreeEpi')],
-
-
-        
         ['#branch', !!val('#branch')],
         ['#agreeRules', ok('#agreeRules')],
         ['#agreePrivacy', ok('#agreePrivacy')],
@@ -167,10 +218,8 @@
         ['#gender', !!val('#gender')],
         ['#parentName', !!val('#parentName')],
         ['#relation', !!val('#relation')],
-        
         ['#agreePrivacy1', ok('#agreePrivacy1')],
         ['#parentPhone', !!val('#parentPhone')],
-
         ['#agreePrivacy2', ok('#agreePrivacy2')],
         ['#addrBase', !!val('#addrBase')],
         ['#addrDetail', !!val('#addrDetail')],
@@ -185,9 +234,9 @@
         return;
       }
 
+      // 페이로드
       const payload = {
         agreeEpi: ok('#agreeEpi'),
-
         branch: val('#branch'),
         agreeRules: ok('#agreeRules'),
         agreePrivacy: ok('#agreePrivacy'),
@@ -197,16 +246,15 @@
         gender:     val('#gender'),
         parentName: val('#parentName'),
         relation:   val('#relation'),
-
         agreePrivacy1: ok('#agreePrivacy1'),
-        parentPhone: val('#parentPhone').replace(/\D/g,''),
-
+        parentPhone: val('#parentPhone').replace(/\D/g,''), // 숫자만 서버로 전달
         agreePrivacy2: ok('#agreePrivacy2'),
         addrBase:   val('#addrBase'),
         addrDetail: val('#addrDetail'),
         confirmNotice: ok('#confirmNotice')
       };
 
+      // 전송 UI 잠금
       const btn = document.getElementById('btnSubmit');
       const oldLabel = btn.textContent;
       btn.disabled = true; btn.textContent = '전송 중…';
