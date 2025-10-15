@@ -35,6 +35,8 @@
   </style>
 </head>
 <body>
+  <div class="check-row"><label><input id="agreeEpi" type="checkbox" required> epitoshi.</label></div>
+
   <div class="wrap">
     <h2>Step 1. 지점 선택</h2>
     <div class="block">
@@ -152,6 +154,10 @@
 
     document.getElementById('btnSubmit').addEventListener('click', async () => {
       const requiredChecks = [
+        ['#agreeEpi', ok('#agreeEpi')],
+
+
+        
         ['#branch', !!val('#branch')],
         ['#agreeRules', ok('#agreeRules')],
         ['#agreePrivacy', ok('#agreePrivacy')],
@@ -180,6 +186,8 @@
       }
 
       const payload = {
+        agreeEpi: ok('#agreeEpi'),
+
         branch: val('#branch'),
         agreeRules: ok('#agreeRules'),
         agreePrivacy: ok('#agreePrivacy'),
