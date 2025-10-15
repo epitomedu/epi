@@ -86,14 +86,17 @@
         <option>기타</option>
       </select>
     </div>
-    <div class="block">
-      <label for="parentPhone">보호자 휴대폰번호</label>
-      <input id="parentPhone" type="tel" inputmode="numeric" pattern="[0-9\-]*" placeholder="01012345678" required>
-    </div>
+
+    <div class="check-row"><label><input id="agreePrivacy1" type="checkbox" required> 개인정보 수집 동의합니다1.</label></div>
+
+    
     <div class="block">
       <label for="parentPhone">보호자 휴대폰번호</label>
       <input id="parentPhone" type="tel" inputmode="numeric" pattern="[0-9\-]*" placeholder="010-1234-5678" required>
     </div>
+    
+    <div class="check-row"><label><input id="agreePrivacy2" type="checkbox" required> 개인정보 수집 동의합니다2.</label></div>
+
 
     <h2>Step 4. 주소</h2>
     <div class="block">
@@ -158,7 +161,11 @@
         ['#gender', !!val('#gender')],
         ['#parentName', !!val('#parentName')],
         ['#relation', !!val('#relation')],
+        
+        ['#agreePrivacy1', ok('#agreePrivacy1')],
         ['#parentPhone', !!val('#parentPhone')],
+
+        ['#agreePrivacy2', ok('#agreePrivacy2')],
         ['#addrBase', !!val('#addrBase')],
         ['#addrDetail', !!val('#addrDetail')],
         ['#confirmNotice', ok('#confirmNotice')],
@@ -182,7 +189,11 @@
         gender:     val('#gender'),
         parentName: val('#parentName'),
         relation:   val('#relation'),
+
+        agreePrivacy1: ok('#agreePrivacy1'),
         parentPhone: val('#parentPhone').replace(/\D/g,''),
+
+        agreePrivacy2: ok('#agreePrivacy2'),
         addrBase:   val('#addrBase'),
         addrDetail: val('#addrDetail'),
         confirmNotice: ok('#confirmNotice')
